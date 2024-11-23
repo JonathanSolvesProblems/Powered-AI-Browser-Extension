@@ -10,3 +10,13 @@ in package.json, ensure:
 }
 
 npm run build
+
+Chrome Extension:
+- Summarize Page - Summarization API
+- Use it to cite a section of the page, can highlight what to paraphrase
+	and will automatically cite it in appropriate format based on standard.
+	- If nothing highlighted, then assume whole page.
+- Take Info from Page with User's Prompt to Re-Write Tone: Write API
+- Query Page to See if Anything Relevant to Search
+- Rewrite API as well on google docs
+- Translation API to view web page and translate a summary for the user.
