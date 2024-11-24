@@ -3,24 +3,36 @@
   "name": "AI Research Assistant",
   "version": "1.0",
   "description": "An AI-powered tool for summarizing, writing, translating, and rewriting content.",
-  "permissions": ["activeTab", "storage", "identity", "https://*/"],
+  "permissions": [
+    "activeTab",
+    "storage",
+    "identity",
+    "scripting",
+    "aiLanguageModelOriginTrial"
+  ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
-      "16": "icons/icon16.png",
-      "48": "icons/icon48.png",
-      "128": "icons/icon128.png"
+      "16": "build/logo192.png",
+      "48": "build/logo192.png",
+      "128": "build/logo192.png"
     }
   },
-  "host_permissions": [
-    "https://www.googleapis.com/*"
-  ],
+  "host_permissions": ["https://*/*"],
   "icons": {
-    "16": "icons/icon16.png",
-    "48": "icons/icon48.png",
-    "128": "icons/icon128.png"
-  }
+    "16": "build/logo192.png",
+    "48": "build/logo192.png",
+    "128": "build/logo192.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["static/css/*", "static/js/*", "icons/*"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "trial_tokens": ["REACT_APP_EXTENSION_ORIGIN_KEY"]
 }

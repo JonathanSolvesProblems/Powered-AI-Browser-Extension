@@ -1,0 +1,12 @@
+{
+  "rules": {
+    "no-restricted-globals": ["error", "event", "fdescribe"] 
+  },
+  "parserOptions": {
+    "sourceType": "module"
+  },
+  "env": {
+    "browser": true,
+    "es2021": true
+  }
+}
