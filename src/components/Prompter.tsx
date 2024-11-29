@@ -12,6 +12,10 @@ interface Session {
 // TODO: Make sure to disable API calls when loading
 // TODO: Session not persistent
 // TODO: Writer API for name of tab? Or substring Maybe a checkbox to change names, option for user to rename too.
+// TODO: Cancel not working
+// TODO: I think it's not properly creating session
+// TODO: UI improvement to show selected session.
+// TODO: Make responses and sessions general
 const Prompter = ({ inputText, setOutput }: PrompterProps) => {
   const [temperature, setTemperature] = useState(1.0);
   const [topK, setTopK] = useState(3);
@@ -72,6 +76,7 @@ const Prompter = ({ inputText, setOutput }: PrompterProps) => {
     setCurrentTabId(sessionId);
   };
 
+  // TODO: May need to find a way to cancel it faster, or only reveal it when it appears.
   const handleCancel = () => {
     if (!currentSession) {
       setOutput('No active session to cancel.');
@@ -100,7 +105,8 @@ const Prompter = ({ inputText, setOutput }: PrompterProps) => {
     setIsGenerating(true);
     setOutput('Generating response from prompt...');
 
-    const sessionId = currentSession?.id;
+    let sessionId = currentSession?.id;
+    console.log(`Session ID on frontend: ${sessionId}`);
     chrome.runtime.sendMessage(
       {
         action: 'getPromptResponse',
@@ -112,11 +118,15 @@ const Prompter = ({ inputText, setOutput }: PrompterProps) => {
       (response) => {
         setIsGenerating(false);
         if (response?.success) {
+          sessionId = response.sessionId;
+          console.log(`Session ID on backend: ${sessionId}`);
           let sessionExists = sessions.some(
             (session) => session.id === sessionId
           );
+          console.log(`Does a session exists? ${sessionExists}`);
 
           if (!sessionExists) {
+            console.log('Creating new session...');
             const newSession = {
               id: sessionId!,
               name: `Session ${sessions.length + 1}`,
@@ -129,7 +139,7 @@ const Prompter = ({ inputText, setOutput }: PrompterProps) => {
           const sessionResponses = responses[sessionId || ''] || [];
           setResponses({
             ...responses,
-            [sessionId || '']: [...sessionResponses, response.message],
+            [sessionId || '']: [...sessionResponses, response.promptResponse],
           });
           setOutput(response.promptResponse);
         } else {
@@ -140,10 +150,12 @@ const Prompter = ({ inputText, setOutput }: PrompterProps) => {
   };
 
   return (
-    <div>
-      <div>
-        <label>
-          Top-K (1 to 8):
+    <div className="p-6 bg-gradient-to-b from-[#fff4dc] to-[#f9e0ac] rounded-lg shadow-lg">
+      <div className="grid grid-cols-1 gap-4 mb-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Top-K (1 to 8):
+          </label>
           <input
             type="number"
             value={topK}
@@ -152,12 +164,13 @@ const Prompter = ({ inputText, setOutput }: PrompterProps) => {
             onChange={(e) =>
               savePromptParmsToBackground(temperature, Number(e.target.value))
             }
+            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
           />
-        </label>
-      </div>
-      <div>
-        <label>
-          Temperature (0.0 to 2.0):
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Temperature (0.0 to 2.0):
+          </label>
           <input
             type="number"
             value={temperature}
@@ -167,31 +180,59 @@ const Prompter = ({ inputText, setOutput }: PrompterProps) => {
             onChange={(e) =>
               savePromptParmsToBackground(Number(e.target.value), topK)
             }
+            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
           />
-        </label>
+        </div>
       </div>
-      <button onClick={handlePrompter} disabled={isGenerating}>
-        {isGenerating ? 'Generating...' : 'Ask Question'}
-      </button>
-      <button onClick={handleCloneSession} disabled={!currentSession}>
-        Clone Session
-      </button>
-      {isGenerating && <button onClick={handleCancel}>Cancel</button>}
+
+      <div className="flex gap-4 mb-6">
+        <button
+          onClick={handlePrompter}
+          disabled={isGenerating}
+          className={`px-6 py-2 rounded-lg font-medium transition-all 
+            ${
+              isGenerating
+                ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                : 'bg-blue-500 text-white hover:bg-blue-600'
+            }`}
+        >
+          {isGenerating ? 'Generating...' : 'Ask Question'}
+        </button>
+        <button
+          onClick={handleCloneSession}
+          disabled={!currentSession}
+          className={`px-6 py-2 rounded-lg font-medium transition-all 
+            ${
+              !currentSession
+                ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                : 'bg-green-500 text-white hover:bg-green-600'
+            }`}
+        >
+          Clone Session
+        </button>
+        {isGenerating && (
+          <button
+            onClick={handleCancel}
+            className="px-6 py-2 rounded-lg font-medium bg-red-500 text-white hover:bg-red-600"
+          >
+            Cancel
+          </button>
+        )}
+      </div>
+
       <div>
-        <h3>Sessions</h3>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">Sessions</h3>
+        <div className="flex flex-wrap gap-2">
           {sessions.map((session) => (
             <button
               key={session.id}
               onClick={() => handleTabClick(session.id)}
-              style={{
-                padding: '8px',
-                border:
+              className={`px-4 py-2 rounded-lg font-medium transition-all 
+                ${
                   session.id === currentTabId
-                    ? '2px solid blue'
-                    : '1px solid gray',
-                background: session.id === currentTabId ? '#e0f7fa' : '#ffffff',
-              }}
+                    ? 'bg-blue-100 border-blue-500 text-blue-600 border-2'
+                    : 'bg-white border border-gray-300 hover:bg-gray-100'
+                }`}
             >
               {session.name}
             </button>

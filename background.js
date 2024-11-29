@@ -109,18 +109,26 @@ const getPromptResponse = async (text, temperature, topK, sessionId) => {
       console.log(`The Prompt API isn't usable.`);
       return noPromptResponse;
     }
-
+    console.log(
+      `In background script for ${sessionId} at ${sessions[sessionId]}`
+    );
     if (sessionId && sessions[sessionId]) {
+      console.log('Getting existing session');
       session = sessions[sessionId].session;
     } else {
+      const controller = new AbortController();
+      options.signal = controller.signal;
       session = await createSession({
         ...options,
         monitor: available !== 'readily' ? createDownloadMonitor() : undefined,
       });
-    }
 
-    sessionId = `session-${Date.now()}`;
-    sessions[sessionId] = { session, controller };
+      // TODO: Will probably have to adapt to provide context for existing sessions, revivew documentation.
+      // Perhaps can re-use context in object.
+      // Responses to be stored too
+      sessionId = `session-${Date.now()}`;
+      sessions[sessionId] = { session, controller };
+    }
 
     const promptResponse = await session.prompt(text);
     console.log(`${session.tokensSoFar}/${session.maxTokens}
@@ -129,12 +137,16 @@ const getPromptResponse = async (text, temperature, topK, sessionId) => {
     cachedOutputText = promptResponse;
 
     return {
+      success: true,
       sessionId: sessionId,
       promptResponse: promptResponse || noPromptResponse,
     };
   } catch (error) {
     console.error(`Error getting prompt response: ${error}`);
-    return noPromptResponse;
+    return {
+      success: false,
+      promptResponse: noPromptResponse,
+    };
   }
 };
 
@@ -207,7 +219,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   } else if (request.action === 'getPromptResponse') {
     const { inputText, temperature, topK, sessionId } = request;
     getPromptResponse(inputText, temperature, topK, sessionId)
-      .then((promptResponse) => sendResponse(promptResponse))
+      .then((response) => sendResponse(response))
       .catch((error) => {
         console.error(error);
         sendResponse({
@@ -220,14 +232,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const success = abortSession(sessionId);
     sendResponse({ success });
   } else if (request.action === 'cloneSession') {
-    const { sessionId } = message;
+    const { sessionId } = request;
     const session = sessions[sessionId]?.session;
     if (session) {
       const controller = new AbortController();
       cloneSession(session, controller.signal).then((clonedSession) => {
         const clonedSessionId = `session-${Date.now()}`;
         sessions[clonedSessionId] = { session: clonedSession, controller };
-        sendResponse({ clonedSessionId });
+        sendResponse({ success: true, sessionId: clonedSessionId });
       });
     } else {
       sendResponse({ error: 'Session not found' });

@@ -132,88 +132,114 @@ const Summarizer = ({
   };
 
   return (
-    <>
-      <div>
-        <label>
+    <div className="p-6 bg-gradient-to-b from-[#fff4dc] to-[#f9e0ac] rounded-lg shadow-lg">
+      {/* Type Selector */}
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
           Type:
-          <select
-            value={type}
-            onChange={(e) =>
-              saveSummaryParmsToBackground(
-                e.target.value,
-                format,
-                length,
-                sharedContext
-              )
-            }
-          >
-            <option value="key-points">Key Points</option>
-            <option value="tl;dr">TL;DR</option>
-            <option value="teaser">Teaser</option>
-            <option value="headline">Headline</option>
-          </select>
         </label>
+        <select
+          value={type}
+          onChange={(e) =>
+            saveSummaryParmsToBackground(
+              e.target.value,
+              format,
+              length,
+              sharedContext
+            )
+          }
+          className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+        >
+          <option value="key-points">Key Points</option>
+          <option value="tl;dr">TL;DR</option>
+          <option value="teaser">Teaser</option>
+          <option value="headline">Headline</option>
+        </select>
       </div>
 
-      <div>
-        <label>
+      {/* Format Selector */}
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
           Format:
-          <select
-            value={format}
-            onChange={(e) =>
-              saveSummaryParmsToBackground(
-                type,
-                e.target.value,
-                length,
-                sharedContext
-              )
-            }
-          >
-            <option value="markdown">Markdown</option>
-            <option value="plain-text">Plain Text</option>
-          </select>
         </label>
+        <select
+          value={format}
+          onChange={(e) =>
+            saveSummaryParmsToBackground(
+              type,
+              e.target.value,
+              length,
+              sharedContext
+            )
+          }
+          className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
+        >
+          <option value="markdown">Markdown</option>
+          <option value="plain-text">Plain Text</option>
+        </select>
       </div>
 
-      <div>
-        <label>
+      {/* Length Selector */}
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
           Length:
-          <select
-            value={length}
-            onChange={(e) =>
-              saveSummaryParmsToBackground(
-                type,
-                format,
-                e.target.value,
-                sharedContext
-              )
-            }
-          >
-            <option value="short">Short</option>
-            <option value="medium">Medium</option>
-            <option value="long">Long</option>
-          </select>
         </label>
+        <select
+          value={length}
+          onChange={(e) =>
+            saveSummaryParmsToBackground(
+              type,
+              format,
+              e.target.value,
+              sharedContext
+            )
+          }
+          className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-yellow-500 focus:outline-none"
+        >
+          <option value="short">Short</option>
+          <option value="medium">Medium</option>
+          <option value="long">Long</option>
+        </select>
       </div>
 
-      <div>
-        <label>
+      {/* Shared Context Input */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
           Shared Context:
-          <input
-            type="text"
-            value={sharedContext}
-            onChange={(e) =>
-              saveSummaryParmsToBackground(type, format, length, e.target.value)
-            }
-            placeholder="Optional shared context"
-          />
         </label>
+        <input
+          type="text"
+          value={sharedContext}
+          onChange={(e) =>
+            saveSummaryParmsToBackground(type, format, length, e.target.value)
+          }
+          placeholder="Optional shared context"
+          className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:outline-none"
+        />
       </div>
 
-      <button onClick={handleSummarize}>Summarize</button>
-      <button onClick={summarizeSelection}>Summarize Highlighted Text</button>
-      <button onClick={summarizePage}>Summarize Entire Page</button>
-    </>
+      {/* Action Buttons */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <button
+          onClick={handleSummarize}
+          className="px-6 py-2 rounded-lg font-medium bg-blue-500 text-white hover:bg-blue-600 transition-all"
+        >
+          Summarize
+        </button>
+        <button
+          onClick={summarizeSelection}
+          className="px-6 py-2 rounded-lg font-medium bg-green-500 text-white hover:bg-green-600 transition-all"
+        >
+          Summarize Highlighted Text
+        </button>
+        <button
+          onClick={summarizePage}
+          className="px-6 py-2 rounded-lg font-medium bg-yellow-500 text-white hover:bg-yellow-600 transition-all"
+        >
+          Summarize Entire Page
+        </button>
+      </div>
+    </div>
   );
 };
 

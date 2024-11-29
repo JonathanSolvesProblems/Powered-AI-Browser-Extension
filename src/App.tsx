@@ -5,6 +5,7 @@ import Prompter from './components/Prompter';
 import Translator from './components/Translator';
 import Header from './components/Header';
 
+// TODO: Wrap output
 const App = () => {
   const [inputText, setInputText] = useState('');
   const [output, setOutput] = useState('');
@@ -36,19 +37,27 @@ const App = () => {
   }, [inputText]);
 
   return (
-    <div className="App">
+    <div className="min-h-screen bg-gradient-to-b from-[#fff4dc] to-[#fef3c7] p-6 flex flex-col items-center">
       <Header
         inputText={inputText}
         setInputText={setInputText}
         output={output}
         setOutput={setOutput}
       />
+
       <textarea
         value={inputText}
         onChange={(e) => saveInputToBackground(e.target.value)}
         placeholder="Enter your research content or URL"
+        className="mt-6 w-full max-w-3xl h-32 p-4 border border-gray-300 rounded-lg shadow focus:ring-2 focus:ring-yellow-400 focus:outline-none resize-none text-gray-700"
       />
-      <div id="output">{output}</div>
+
+      <div
+        id="output"
+        className="mt-6 w-full max-w-3xl p-4 bg-white border border-gray-200 rounded-lg shadow text-gray-800 whitespace-pre-line"
+      >
+        {output || 'Your output will appear here.'}
+      </div>
     </div>
   );
 };

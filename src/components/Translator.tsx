@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getTranslationText } from '../utility/apiCalls';
 
+// TODO: Option to swap source and target
 interface TranslatorProps {
   inputText: string;
   setInputText: (inputText: string) => void;
@@ -49,13 +50,19 @@ const Translator = ({
   };
 
   return (
-    <div>
-      <div>
-        <label htmlFor="sourceLang">Source Language:</label>
+    <div className="p-6 bg-gradient-to-b from-[#e7f3ff] to-[#cfe9ff] rounded-lg shadow-lg">
+      <div className="mb-4">
+        <label
+          htmlFor="sourceLang"
+          className="block text-sm font-medium text-gray-700 mb-2"
+        >
+          Source Language:
+        </label>
         <select
           id="sourceLang"
           value={sourceLang}
           onChange={(e) => setSourceLang(e.target.value)}
+          className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
         >
           {languageOptions.map((option) => (
             <option key={option.value} value={option.value}>
@@ -64,12 +71,19 @@ const Translator = ({
           ))}
         </select>
       </div>
-      <div>
-        <label htmlFor="targetLang">Target Language:</label>
+
+      <div className="mb-6">
+        <label
+          htmlFor="targetLang"
+          className="block text-sm font-medium text-gray-700 mb-2"
+        >
+          Target Language:
+        </label>
         <select
           id="targetLang"
           value={targetLang}
           onChange={(e) => setTargetLang(e.target.value)}
+          className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
         >
           {languageOptions.map((option) => (
             <option key={option.value} value={option.value}>
@@ -78,7 +92,15 @@ const Translator = ({
           ))}
         </select>
       </div>
-      <button onClick={handleTranslation}>Translate</button>
+
+      <div className="text-center">
+        <button
+          onClick={handleTranslation}
+          className="px-6 py-2 rounded-lg font-medium bg-blue-500 text-white hover:bg-blue-600 transition-all"
+        >
+          Translate
+        </button>
+      </div>
     </div>
   );
 };
