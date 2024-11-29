@@ -6,6 +6,7 @@
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
+    "@types/dom-chromium-ai": "^0.0.4",
     "@types/jest": "^27.5.2",
     "@types/node": "^16.18.119",
     "@types/react": "^18.3.12",
@@ -18,10 +19,10 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "node build-manifest.js && react-scripts start && node update-popup.js",
-    "build": "node build-manifest.js && react-scripts build && node update-popup.js",
-    "test": "node build-manifest.js && react-scripts test && node update-popup.js",
-    "eject": "node build-manifest.js && react-scripts eject && node update-popup.js"
+    "start": "react-scripts start && node update-popup.js",
+    "build": "react-scripts build && node update-popup.js",
+    "test": "react-scripts test && node update-popup.js",
+    "eject": "react-scripts eject && node update-popup.js"
   },
   "eslintConfig": {
     "extends": [
