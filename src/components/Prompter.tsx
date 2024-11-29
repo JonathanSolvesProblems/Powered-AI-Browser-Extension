@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { Session } from '../utility/schemas';
 
 interface PrompterProps {
   inputText: string;
   setOutput: (summary: string) => void;
-}
-
-interface Session {
-  id: string;
-  name: string;
+  currentSession: Session | null;
+  setCurrentSession: (currentSession: Session | null) => void;
 }
 // TODO: Make sure to disable API calls when loading
 // TODO: Session not persistent
@@ -16,13 +14,19 @@ interface Session {
 // TODO: I think it's not properly creating session
 // TODO: UI improvement to show selected session.
 // TODO: Make responses and sessions general
-const Prompter = ({ inputText, setOutput }: PrompterProps) => {
+/*
+
+*/
+const Prompter = ({
+  inputText,
+  setOutput,
+  currentSession,
+  setCurrentSession,
+}: PrompterProps) => {
   const [temperature, setTemperature] = useState(1.0);
   const [topK, setTopK] = useState(3);
   const [isGenerating, setIsGenerating] = useState(false);
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [currentSession, setCurrentSession] = useState<Session | null>(null);
-  const [responses, setResponses] = useState<{ [key: string]: string[] }>({});
   const [currentTabId, setCurrentTabId] = useState<string | null>(null);
 
   const setPromptParms = (temperature: number, topK: number) => {
@@ -64,6 +68,7 @@ const Prompter = ({ inputText, setOutput }: PrompterProps) => {
           const clonedSession: Session = {
             id: response.sessionId,
             name: `${currentSession.name} (Cloned)`,
+            responses: currentSession.responses,
           };
           setSessions((prev) => [...prev, clonedSession]);
           setCurrentSession(clonedSession);
@@ -74,6 +79,13 @@ const Prompter = ({ inputText, setOutput }: PrompterProps) => {
 
   const handleTabClick = (sessionId: string) => {
     setCurrentTabId(sessionId);
+
+    const matchingSession = sessions.find(
+      (session) => session.id === sessionId
+    );
+    if (matchingSession) {
+      setCurrentSession(matchingSession);
+    }
   };
 
   // TODO: May need to find a way to cancel it faster, or only reveal it when it appears.
@@ -106,7 +118,6 @@ const Prompter = ({ inputText, setOutput }: PrompterProps) => {
     setOutput('Generating response from prompt...');
 
     let sessionId = currentSession?.id;
-    console.log(`Session ID on frontend: ${sessionId}`);
     chrome.runtime.sendMessage(
       {
         action: 'getPromptResponse',
@@ -119,28 +130,46 @@ const Prompter = ({ inputText, setOutput }: PrompterProps) => {
         setIsGenerating(false);
         if (response?.success) {
           sessionId = response.sessionId;
-          console.log(`Session ID on backend: ${sessionId}`);
           let sessionExists = sessions.some(
             (session) => session.id === sessionId
           );
-          console.log(`Does a session exists? ${sessionExists}`);
 
           if (!sessionExists) {
-            console.log('Creating new session...');
             const newSession = {
               id: sessionId!,
-              name: `Session ${sessions.length + 1}`,
+              name:
+                response.promptResponse.length > 10
+                  ? `${response.promptResponse.slice(0, 10)}...`
+                  : response.promptResponse,
+              responses: [response.promptResponse],
             };
 
             setSessions((prev: Session[]) => [...prev, newSession]);
             setCurrentSession(newSession);
+          } else {
+            setSessions((prev: Session[]) =>
+              prev.map((session) =>
+                session.id === sessionId
+                  ? {
+                      ...session,
+                      responses: [
+                        ...session.responses,
+                        response.promptResponse,
+                      ],
+                    }
+                  : session
+              )
+            );
           }
 
-          const sessionResponses = responses[sessionId || ''] || [];
-          setResponses({
-            ...responses,
-            [sessionId || '']: [...sessionResponses, response.promptResponse],
-          });
+          if (sessionId) handleTabClick(sessionId);
+
+          // const sessionResponses = responses[sessionId || ''] || [];
+          // setResponses({
+          //   ...responses,
+          //   [sessionId || '']: [...sessionResponses, response.promptResponse],
+          // });
+
           setOutput(response.promptResponse);
         } else {
           setOutput(response.promptResponse || 'Failed to generate response.');

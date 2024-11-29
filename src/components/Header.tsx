@@ -2,19 +2,23 @@ import React, { useState, useEffect } from 'react';
 import Summarizer from './Summarizer';
 import Prompter from './Prompter';
 import Translator from './Translator';
+import { Session } from '../utility/schemas';
 
 interface HeaderProps {
   inputText: string;
   setInputText: (inputText: string) => void;
   output: string;
   setOutput: (outputText: string) => void;
+  currentSession: Session | null;
+  setCurrentSession: (currentSession: Session | null) => void;
 }
-
 const Header = ({
   inputText,
   setInputText,
   output,
   setOutput,
+  currentSession,
+  setCurrentSession,
 }: HeaderProps) => {
   const [activeComponent, setActiveComponent] = useState<string>('Ask');
 
@@ -31,7 +35,14 @@ const Header = ({
   const renderComponent = () => {
     switch (activeComponent) {
       case 'Ask':
-        return <Prompter inputText={inputText} setOutput={setOutput} />;
+        return (
+          <Prompter
+            inputText={inputText}
+            setOutput={setOutput}
+            currentSession={currentSession}
+            setCurrentSession={setCurrentSession}
+          />
+        );
       case 'Summarize':
         return (
           <Summarizer

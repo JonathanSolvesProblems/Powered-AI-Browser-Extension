@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import './styles/styles.css';
-import Summarizer from './components/Summarizer';
-import Prompter from './components/Prompter';
-import Translator from './components/Translator';
 import Header from './components/Header';
+import { Session } from './utility/schemas';
 
 // TODO: Wrap output
 const App = () => {
   const [inputText, setInputText] = useState('');
   const [output, setOutput] = useState('');
+  const [currentSession, setCurrentSession] = useState<Session | null>(null);
 
   const saveInputToBackground = (text: string) => {
     setInputText(text);
@@ -43,6 +42,8 @@ const App = () => {
         setInputText={setInputText}
         output={output}
         setOutput={setOutput}
+        currentSession={currentSession}
+        setCurrentSession={setCurrentSession}
       />
 
       <textarea
@@ -58,6 +59,24 @@ const App = () => {
       >
         {output || 'Your output will appear here.'}
       </div>
+      {currentSession && (
+        <div
+          id="responses"
+          className="mt-6 w-full max-w-3xl p-4 bg-white border border-gray-200 rounded-lg shadow text-gray-800 whitespace-pre-line"
+        >
+          {currentSession.responses.length > 0 ? (
+            <ul className="list-disc pl-6">
+              {currentSession.responses.map((response, index) => (
+                <li key={index} className="text-gray-700">
+                  {response}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>Your responses will appear here.</p>
+          )}
+        </div>
+      )}
     </div>
   );
 };

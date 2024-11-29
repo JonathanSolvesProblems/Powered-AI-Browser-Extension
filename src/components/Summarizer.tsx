@@ -12,6 +12,8 @@ interface SummarizerProps {
 // Give UI options to users to select other options
 // Potentially tokens go in manifest?
 // TODO: Test in a zoom meeting or something
+// TODO: Add session management
+// Can maybe reference other resources related?
 const Summarizer = ({
   inputText,
   setInputText,

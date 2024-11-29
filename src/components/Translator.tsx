@@ -12,6 +12,7 @@ interface TranslatorProps {
 // Extend other features: https://developer.chrome.com/docs/ai/summarizer-api?_gl=1*l04xrn*_up*MQ..*_ga*MTgyNzc5NTg2MS4xNzMyMzgxMDY5*_ga_H1Y3PXZW9Q*MTczMjM4MTA2OC4xLjAuMTczMjM4MTA2OC4wLjAuMA..#use-summarizer
 // Give UI options to users to select other options
 // Potentially tokens go in manifest?
+// TODO: Add session management, can maybe save specific phrases and such
 const Translator = ({
   inputText,
   setInputText,

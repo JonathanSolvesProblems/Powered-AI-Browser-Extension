@@ -109,11 +109,8 @@ const getPromptResponse = async (text, temperature, topK, sessionId) => {
       console.log(`The Prompt API isn't usable.`);
       return noPromptResponse;
     }
-    console.log(
-      `In background script for ${sessionId} at ${sessions[sessionId]}`
-    );
+
     if (sessionId && sessions[sessionId]) {
-      console.log('Getting existing session');
       session = sessions[sessionId].session;
     } else {
       const controller = new AbortController();
