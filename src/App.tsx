@@ -8,6 +8,21 @@ const App = () => {
   const [inputText, setInputText] = useState('');
   const [output, setOutput] = useState('');
   const [currentSession, setCurrentSession] = useState<Session | null>(null);
+  const [collapsedResponses, setCollapsedResponses] = useState<Set<number>>(
+    new Set()
+  );
+
+  const toggleCollapse = (index: number) => {
+    setCollapsedResponses((prev) => {
+      const newCollapsed = new Set(prev);
+      if (newCollapsed.has(index)) {
+        newCollapsed.delete(index);
+      } else {
+        newCollapsed.add(index);
+      }
+      return newCollapsed;
+    });
+  };
 
   const saveInputToBackground = (text: string) => {
     setInputText(text);
@@ -65,12 +80,26 @@ const App = () => {
           className="mt-6 w-full max-w-3xl p-4 bg-white border border-gray-200 rounded-lg shadow text-gray-800 whitespace-pre-line"
         >
           {currentSession.responses.length > 0 ? (
-            <ul className="list-disc pl-6">
-              {currentSession.responses.map((response, index) => (
-                <li key={index} className="text-gray-700">
-                  {response}
-                </li>
-              ))}
+            <ul className="list-disc pl-6 space-y-4">
+              {' '}
+              {currentSession.responses.map((response, index) => {
+                const isCollapsed = collapsedResponses.has(index);
+                const displayText =
+                  isCollapsed && response.length > 10
+                    ? `${response.slice(0, 10)}...`
+                    : response;
+
+                return (
+                  <li key={index} className="text-gray-700">
+                    <div
+                      onClick={() => toggleCollapse(index)}
+                      className="cursor-pointer hover:text-blue-600 transition-all"
+                    >
+                      {displayText}
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           ) : (
             <p>Your responses will appear here.</p>

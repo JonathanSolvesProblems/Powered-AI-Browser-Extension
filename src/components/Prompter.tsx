@@ -1,22 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Session } from '../utility/schemas';
+import { moreIcon } from '../utility/icons';
 
+// TODO: May be response bug to correct, I see doubles, but finish other parts first as may change.
 interface PrompterProps {
   inputText: string;
   setOutput: (summary: string) => void;
   currentSession: Session | null;
   setCurrentSession: (currentSession: Session | null) => void;
 }
-// TODO: Make sure to disable API calls when loading
-// TODO: Session not persistent
-// TODO: Writer API for name of tab? Or substring Maybe a checkbox to change names, option for user to rename too.
-// TODO: Cancel not working
-// TODO: I think it's not properly creating session
-// TODO: UI improvement to show selected session.
-// TODO: Make responses and sessions general
-/*
 
-*/
 const Prompter = ({
   inputText,
   setOutput,
@@ -28,6 +21,12 @@ const Prompter = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [currentTabId, setCurrentTabId] = useState<string | null>(null);
+  const [cancelTriggered, setCancelTriggered] = useState<boolean>(false);
+  const [renamingSessionName, setRenamingSessionName] = useState<string>('');
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
+  const [openSessionMenuId, setOpenSessionMenuId] = useState<string | null>(
+    null
+  );
 
   const setPromptParms = (temperature: number, topK: number) => {
     setTemperature(temperature);
@@ -46,6 +45,66 @@ const Prompter = ({
     );
   }, []);
 
+  useEffect(() => {
+    getSessionsFromBackground();
+    getCurrentSessionInBackground();
+  }, []);
+
+  useEffect(() => {
+    storeSessionsInBackground();
+  }, [sessions]);
+
+  useEffect(() => {
+    storeCurrentSessionInBackground();
+  }, [currentSession]);
+
+  const storeSessionsInBackground = () => {
+    chrome.runtime.sendMessage(
+      { action: 'storeSessions', payload: sessions },
+      (response) => {
+        if (response?.status !== 'success') {
+          console.error('Failed to update sessions in the background script.');
+        }
+      }
+    );
+  };
+
+  const storeCurrentSessionInBackground = () => {
+    chrome.runtime.sendMessage(
+      { action: 'storeCurrentSession', payload: currentSession },
+      (response) => {
+        if (response?.status !== 'success') {
+          console.error(
+            'Failed to update current session in the background script.'
+          );
+        }
+      }
+    );
+  };
+
+  const getSessionsFromBackground = () => {
+    chrome.runtime.sendMessage({ action: 'getSessions' }, (response) => {
+      if (response?.status == 'success') {
+        setSessions(response.payload);
+      } else {
+        console.log('Failed to update sessions in the background script.');
+      }
+    });
+  };
+
+  const getCurrentSessionInBackground = () => {
+    chrome.runtime.sendMessage({ action: 'getCurrentSession' }, (response) => {
+      if (response?.status == 'success') {
+        if (response.payload && response.payload.id) {
+          setCurrentSession(response.payload);
+          handleTabClick(response.payload.id);
+        }
+      } else {
+        console.log('Failed to get current session in the background script.');
+      }
+    });
+  };
+
   const savePromptParmsToBackground = (temperature: number, topK: number) => {
     setPromptParms(temperature, topK);
     chrome.runtime.sendMessage(
@@ -59,7 +118,10 @@ const Prompter = ({
   };
 
   const handleCloneSession = async () => {
-    if (!currentSession) return;
+    if (!currentSession) {
+      console.log('There is no current session available.');
+      return;
+    }
 
     chrome.runtime.sendMessage(
       { action: 'cloneSession', sessionId: currentSession.id },
@@ -67,11 +129,13 @@ const Prompter = ({
         if (response?.success) {
           const clonedSession: Session = {
             id: response.sessionId,
-            name: `${currentSession.name} (Cloned)`,
-            responses: currentSession.responses,
+            name: currentSession.name,
+            responses: [...currentSession.responses],
           };
           setSessions((prev) => [...prev, clonedSession]);
           setCurrentSession(clonedSession);
+        } else {
+          console.log('Unable to clone session');
         }
       }
     );
@@ -88,8 +152,9 @@ const Prompter = ({
     }
   };
 
-  // TODO: May need to find a way to cancel it faster, or only reveal it when it appears.
-  const handleCancel = () => {
+  useEffect(() => {
+    if (!cancelTriggered) return;
+
     if (!currentSession) {
       setOutput('No active session to cancel.');
       return;
@@ -99,13 +164,71 @@ const Prompter = ({
       { action: 'abortPromptResponse', sessionId: currentSession },
       (response) => {
         if (response?.success) {
+          getSessionsFromBackground();
           setOutput('Session canceled successfully.');
           setIsGenerating(false);
+          setCancelTriggered(false);
         } else {
           setOutput('Failed to cancel the session.');
+          setCancelTriggered(false);
         }
       }
     );
+  }, [cancelTriggered]);
+
+  const handleCancel = () => {
+    getCurrentSessionInBackground();
+    setCancelTriggered(true);
+  };
+
+  const handleRemoveSession = (sessionId: string) => {
+    chrome.runtime.sendMessage(
+      {
+        action: 'removeSession',
+        sessionId: sessionId,
+      },
+      (response) => {
+        if (response?.success) {
+          getSessionsFromBackground();
+          const updatedSessions = sessions.filter(
+            (session) => session.id !== sessionId
+          );
+
+          if (updatedSessions.length > 0) {
+            handleTabClick(updatedSessions[0].id);
+          } else {
+            setCurrentSession(null);
+          }
+          console.log(`Session ${sessionId} removed successfully.`);
+        } else {
+          console.error(
+            `Failed to remove session ${sessionId}:`,
+            response?.error
+          );
+        }
+      }
+    );
+  };
+
+  const handleRenameSession = (sessionId: string) => {
+    setEditingSessionId(sessionId);
+    const getSession = sessions.find((s) => s.id === sessionId);
+    if (getSession) setRenamingSessionName(getSession.name);
+  };
+
+  const handleRenameSubmit = () => {
+    if (editingSessionId) {
+      setSessions((prev) =>
+        prev.map((s) =>
+          s.id === editingSessionId
+            ? { ...s, name: renamingSessionName || s.name }
+            : s
+        )
+      );
+
+      setEditingSessionId(null);
+      setRenamingSessionName('');
+    }
   };
 
   const handlePrompter = async () => {
@@ -145,6 +268,7 @@ const Prompter = ({
             };
 
             setSessions((prev: Session[]) => [...prev, newSession]);
+
             setCurrentSession(newSession);
           } else {
             setSessions((prev: Session[]) =>
@@ -152,6 +276,10 @@ const Prompter = ({
                 session.id === sessionId
                   ? {
                       ...session,
+                      name:
+                        response.promptResponse.length > 10
+                          ? `${response.promptResponse.slice(0, 10)}...`
+                          : response.promptResponse,
                       responses: [
                         ...session.responses,
                         response.promptResponse,
@@ -163,12 +291,6 @@ const Prompter = ({
           }
 
           if (sessionId) handleTabClick(sessionId);
-
-          // const sessionResponses = responses[sessionId || ''] || [];
-          // setResponses({
-          //   ...responses,
-          //   [sessionId || '']: [...sessionResponses, response.promptResponse],
-          // });
 
           setOutput(response.promptResponse);
         } else {
@@ -239,32 +361,82 @@ const Prompter = ({
         >
           Clone Session
         </button>
-        {isGenerating && (
-          <button
-            onClick={handleCancel}
-            className="px-6 py-2 rounded-lg font-medium bg-red-500 text-white hover:bg-red-600"
-          >
-            Cancel
-          </button>
-        )}
       </div>
 
       <div>
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Sessions</h3>
+        {currentSession && (
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Sessions</h3>
+        )}
         <div className="flex flex-wrap gap-2">
           {sessions.map((session) => (
-            <button
+            <div
               key={session.id}
-              onClick={() => handleTabClick(session.id)}
-              className={`px-4 py-2 rounded-lg font-medium transition-all 
-                ${
-                  session.id === currentTabId
-                    ? 'bg-blue-100 border-blue-500 text-blue-600 border-2'
-                    : 'bg-white border border-gray-300 hover:bg-gray-100'
-                }`}
+              className={`relative flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all 
+      ${
+        session.id === currentTabId
+          ? 'bg-blue-100 border-blue-500 text-blue-600 border-2'
+          : 'bg-white border border-gray-300 hover:bg-gray-100'
+      }`}
             >
-              {session.name}
-            </button>
+              {editingSessionId === session.id ? (
+                <input
+                  type="text"
+                  value={renamingSessionName || session.name}
+                  onChange={(e) => setRenamingSessionName(e.target.value)}
+                  onBlur={handleRenameSubmit}
+                  onKeyDown={(e) => e.key === 'Enter' && handleRenameSubmit()}
+                  className="border border-gray-300 rounded px-2 py-1 focus:outline-none flex-grow"
+                  autoFocus
+                />
+              ) : (
+                <button
+                  onClick={() => handleTabClick(session.id)}
+                  className="flex-grow text-left"
+                >
+                  {session.name}
+                </button>
+              )}
+
+              <div className="relative">
+                <img
+                  src={moreIcon}
+                  alt="More Options"
+                  className="w-4 h-4 cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpenSessionMenuId(
+                      session.id === openSessionMenuId ? null : session.id
+                    );
+                  }}
+                />
+
+                {openSessionMenuId === session.id && (
+                  <div
+                    className="absolute top-full right-0 mt-2 bg-white shadow-md border rounded z-10"
+                    style={{ position: 'absolute', zIndex: 10 }}
+                  >
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRenameSession(session.id);
+                      }}
+                      className="block px-4 py-2 text-sm hover:bg-gray-100 w-full text-left"
+                    >
+                      Rename
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveSession(session.id);
+                      }}
+                      className="block px-4 py-2 text-sm hover:bg-gray-100 w-full text-left text-red-600"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
           ))}
         </div>
       </div>

@@ -5,6 +5,7 @@ let cachedSummaryParms = {};
 let cachedPromptParams = {};
 let promptController;
 let sessions = {};
+let currentSession = null;
 
 const browserSupportsAPI = (util, apiName, namespace) => {
   if (util in self && apiName in namespace) {
@@ -83,11 +84,6 @@ const getSummary = async (
   return summary || noSummary;
 };
 
-// TODO: Expand later on for defaultTopk, maxTopK and default temperature
-// TODO: Add controller signal to abort prompt generation
-// TODO: Pick up where left off and can add a clear button, clone session to save it into different tabs
-// destroy to destroy a session and can remove a tab
-// TODO: Allow longer responses with promptStreaming to show partial responses, will look much cooler too.
 const getPromptResponse = async (text, temperature, topK, sessionId) => {
   const noPromptResponse = 'No response to given prompt is available';
   const promptContext = 'You are a helpful and friendly assistant';
@@ -97,12 +93,9 @@ const getPromptResponse = async (text, temperature, topK, sessionId) => {
   const options = { temperature: temperature, topK: topK };
   cachedPromptParams.temperature = temperature;
   cachedPromptParams.topK = topK;
-  options.systemPrompt = promptContext;
-
-  const controller = new AbortController();
-  options.signal = controller.signal;
 
   let session;
+  let context;
 
   try {
     if (available === 'no') {
@@ -112,22 +105,35 @@ const getPromptResponse = async (text, temperature, topK, sessionId) => {
 
     if (sessionId && sessions[sessionId]) {
       session = sessions[sessionId].session;
+
+      sessions[sessionId].context.push({ role: 'user', content: text });
+      context = sessions[sessionId].context;
     } else {
       const controller = new AbortController();
+      context = [
+        { role: 'system', content: promptContext },
+        { role: 'user', content: text },
+      ];
+      options.initialPrompts = context;
       options.signal = controller.signal;
       session = await createSession({
         ...options,
         monitor: available !== 'readily' ? createDownloadMonitor() : undefined,
       });
 
-      // TODO: Will probably have to adapt to provide context for existing sessions, revivew documentation.
-      // Perhaps can re-use context in object.
-      // Responses to be stored too
       sessionId = `session-${Date.now()}`;
-      sessions[sessionId] = { session, controller };
+      sessions[sessionId] = { session, controller, context };
     }
 
-    const promptResponse = await session.prompt(text);
+    const promptResponse = await session.prompt(text, {
+      initialPrompts: context, // ensures always using most up to date context
+    });
+
+    sessions[sessionId].context.push({
+      role: 'assistant',
+      content: promptResponse,
+    });
+
     console.log(`${session.tokensSoFar}/${session.maxTokens}
     (${session.tokensLeft} left)`);
 
@@ -156,9 +162,14 @@ const cloneSession = async (session, signal) => {
 };
 
 const abortSession = (sessionId) => {
+  console.log(sessions[sessionId]);
   if (sessions[sessionId]?.controller) {
+    console.log('Cancelling');
     sessions[sessionId].controller.abort();
+    console.log('Cancelled');
+    console.log(`before ${sessions}`);
     delete sessions[sessionId];
+    console.log(`after ${sessions}`);
     return true;
   }
   return false;
@@ -197,6 +208,51 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       inputText: cachedInputText,
       outputText: cachedOutputText,
     });
+  } else if (request.action === 'storeSessions') {
+    const newSessions = request.payload;
+
+    for (let i = 0; i < newSessions.length; i++) {
+      const session = newSessions[i];
+      const sessionId = session.id;
+
+      if (sessionId) {
+        const existingSession = sessions[sessionId] || {};
+
+        sessions[sessionId] = {
+          ...existingSession,
+          name: session.name || existingSession.name,
+          responses: [
+            ...(existingSession.responses || []),
+            ...(session.responses || []),
+          ],
+        };
+      }
+    }
+    sendResponse({ status: 'success' });
+  } else if (request.action === 'storeCurrentSession') {
+    currentSession = request.payload;
+    sendResponse({ status: 'success' });
+  } else if (request.action === 'getSessions') {
+    const filteredSessions = Object.entries(sessions)
+      .filter(
+        ([sessionId, sessionData]) =>
+          sessionId &&
+          sessionData.name &&
+          sessionData.responses &&
+          sessionData.responses.length > 0
+      )
+      .map(([sessionId, sessionData]) => ({
+        id: sessionId,
+        name: sessionData.name,
+        responses: sessionData.responses,
+      }));
+
+    sendResponse({
+      status: 'success',
+      payload: filteredSessions,
+    });
+  } else if (request.action === 'getCurrentSession') {
+    sendResponse({ status: 'success', payload: currentSession });
   } else if (request.action === 'getCachedSummaryParms') {
     sendResponse({
       sharedContext: cachedSummaryParms.sharedContext,
@@ -230,7 +286,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     sendResponse({ success });
   } else if (request.action === 'cloneSession') {
     const { sessionId } = request;
+
     const session = sessions[sessionId]?.session;
+
     if (session) {
       const controller = new AbortController();
       cloneSession(session, controller.signal).then((clonedSession) => {
@@ -241,8 +299,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     } else {
       sendResponse({ error: 'Session not found' });
     }
+  } else if (request.action === 'removeSession' && request.sessionId) {
+    const sessionId = request.sessionId;
+    if (sessions[sessionId]) {
+      sessions[sessionId].session.destroy();
+      delete sessions[sessionId];
+      sendResponse({ success: true });
+    } else {
+      sendResponse({ success: false, error: 'Session not found.' });
+    }
   }
-
   return true;
 });
 

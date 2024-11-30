@@ -14,6 +14,7 @@ interface SummarizerProps {
 // TODO: Test in a zoom meeting or something
 // TODO: Add session management
 // Can maybe reference other resources related?
+// summarizing videos?
 const Summarizer = ({
   inputText,
   setInputText,
