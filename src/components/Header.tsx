@@ -57,6 +57,7 @@ const Header = ({
           <Translator
             inputText={inputText}
             setInputText={setInputText}
+            output={output}
             setOutput={setOutput}
           />
         );

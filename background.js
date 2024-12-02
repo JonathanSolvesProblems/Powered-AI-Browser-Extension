@@ -312,6 +312,33 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   return true;
 });
 
+const uploadAudioAndTranscribe = async (audioBlob) => {
+  const uploadResponse = await fetch('https://api.assemblyai.com/v2/upload', {
+    method: 'POST',
+    headers: {
+      Authorization: '502f43834cd1491ea05001ca0a56e7be',
+    },
+    body: audioBlob,
+  });
+
+  const { upload_url } = await uploadResponse.json();
+
+  const transcriptResponse = await fetch(
+    'https://api.assemblyai.com/v2/transcript',
+    {
+      method: 'POST',
+      headers: {
+        Authorization: '502f43834cd1491ea05001ca0a56e7be',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ audio_url: upload_url }),
+    }
+  );
+
+  const transcription = await transcriptResponse.json();
+  return transcription.text;
+};
+
 const setupOffscreenDocument = async () => {
   const offscreenUrl = chrome.runtime.getURL('offscreen.html');
   const existingContexts = await chrome.runtime.getContexts({
@@ -338,13 +365,12 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
       sourceLang: sourceLang,
       targetLang: targetLang,
     });
-    // TODO can potentially refactor
   } else if (request.type === 'TRANSLATED') {
+    await chrome.offscreen.closeDocument();
     chrome.runtime.sendMessage({
       type: 'TRANSLATED_TEXT',
       text: request.text,
     });
-    await chrome.offscreen.closeDocument();
   }
 
   return true;

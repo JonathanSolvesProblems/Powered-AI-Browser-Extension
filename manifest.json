@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "AI Research Assistant",
+  "name": "InstaQ",
   "version": "1.0",
-  "description": "An AI-powered tool for summarizing, writing, translating, and rewriting content.",
+  "description": "An AI-powered tool for answering questions, summarizing, and translating",
   "permissions": [
     "activeTab",
     "storage",
@@ -18,16 +18,16 @@
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
-      "16": "build/logo192.png",
-      "48": "build/logo192.png",
-      "128": "build/logo192.png"
+      "16": "build/luffy.png",
+      "48": "build/luffy.png",
+      "128": "build/luffy.png"
     }
   },
   "host_permissions": ["https://*/*"],
   "icons": {
-    "16": "build/logo192.png",
-    "48": "build/logo192.png",
-    "128": "build/logo192.png"
+    "16": "build/luffy.png",
+    "48": "build/luffy.png",
+    "128": "build/luffy.png"
   },
   "web_accessible_resources": [
     {

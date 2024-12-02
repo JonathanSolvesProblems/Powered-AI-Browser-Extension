@@ -55,33 +55,4 @@ const getTranslationText = (text: string, sourceLang: string, targetLang: string
   });
 };
 
-
-const generateText = async (text: string) => {
-    const apiUrl = 'https://api-endpoint/generate';
-    const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ prompt: text }),
-    });
-    
-    const data = await response.json();
-    return data.generatedText || 'No text generated.'
-};
-
-const rewriteText = async (text: string) => {
-    const apiUrl = "https://your-api-endpoint.com/rewrite"; 
-    const response = await fetch(apiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ text: text }),
-    });
-
-    const data = await response.json();
-    return data.rewrittenText || "No rewritten text available.";
-};
-
 export { getSummary, getPromptResponse, getTranslationText }

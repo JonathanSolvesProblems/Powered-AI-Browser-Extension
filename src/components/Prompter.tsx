@@ -199,7 +199,6 @@ const Prompter = ({
           } else {
             setCurrentSession(null);
           }
-          console.log(`Session ${sessionId} removed successfully.`);
         } else {
           console.error(
             `Failed to remove session ${sessionId}:`,
@@ -349,18 +348,6 @@ const Prompter = ({
         >
           {isGenerating ? 'Generating...' : 'Ask Question'}
         </button>
-        <button
-          onClick={handleCloneSession}
-          disabled={!currentSession}
-          className={`px-6 py-2 rounded-lg font-medium transition-all 
-            ${
-              !currentSession
-                ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
-                : 'bg-green-500 text-white hover:bg-green-600'
-            }`}
-        >
-          Clone Session
-        </button>
       </div>
 
       <div>
@@ -418,6 +405,7 @@ const Prompter = ({
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
+                        setOpenSessionMenuId(null);
                         handleRenameSession(session.id);
                       }}
                       className="block px-4 py-2 text-sm hover:bg-gray-100 w-full text-left"
@@ -427,6 +415,23 @@ const Prompter = ({
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
+                        setOpenSessionMenuId(null);
+                        handleCloneSession();
+                      }}
+                      disabled={!currentSession}
+                      className={`px-6 py-2 rounded-lg font-medium transition-all 
+            ${
+              !currentSession
+                ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                : 'bg-green-500 text-white hover:bg-green-600'
+            }`}
+                    >
+                      Clone Session
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenSessionMenuId(null);
                         handleRemoveSession(session.id);
                       }}
                       className="block px-4 py-2 text-sm hover:bg-gray-100 w-full text-left text-red-600"

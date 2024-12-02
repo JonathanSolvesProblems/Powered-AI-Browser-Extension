@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getSummary } from '../utility/apiCalls';
+import { getActiveTabId } from '../utility/helper';
 interface SummarizerProps {
   inputText: string;
   setInputText: (inputText: string) => void;
@@ -15,6 +16,7 @@ interface SummarizerProps {
 // TODO: Add session management
 // Can maybe reference other resources related?
 // summarizing videos?
+// TODO Unify buttons
 const Summarizer = ({
   inputText,
   setInputText,
@@ -25,6 +27,7 @@ const Summarizer = ({
   const [format, setFormat] = useState('markdown');
   const [length, setLength] = useState('medium');
   const [sharedContext, setSharedContext] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const setSummaryParms = (
     type: string,
@@ -70,10 +73,20 @@ const Summarizer = ({
   };
 
   const handleSummarize = async () => {
-    if (inputText) {
+    const selectedText = await getSelection();
+    setIsGenerating(true);
+    if (inputText || selectedText) {
       setOutput('Generating summary...');
+      let textToSummarize;
+
+      if (selectedText) {
+        textToSummarize = selectedText;
+      } else {
+        textToSummarize = inputText;
+      }
+
       const summary = await getSummary(
-        inputText,
+        textToSummarize,
         type,
         format,
         length,
@@ -85,9 +98,10 @@ const Summarizer = ({
     } else {
       setOutput('Please input text or URL');
     }
+    setIsGenerating(false);
   };
 
-  const summarizeSelection = async () => {
+  const getSelection = async () => {
     try {
       const tabId = await getActiveTabId();
       if (tabId === undefined) {
@@ -102,9 +116,14 @@ const Summarizer = ({
           return selection ? selection.toString() : '';
         },
       });
-      setInputText(result.result || 'No text selected');
+      if (result.result) {
+        setInputText(result.result);
+        return result.result;
+      }
+      return '';
     } catch (error) {
       console.error('Error summarizing selection:', error);
+      return '';
     }
   };
 
@@ -126,17 +145,8 @@ const Summarizer = ({
     }
   };
 
-  const getActiveTabId = async (): Promise<number | undefined> => {
-    const [tab] = await chrome.tabs.query({
-      active: true,
-      currentWindow: true,
-    });
-    return tab?.id;
-  };
-
   return (
     <div className="p-6 bg-gradient-to-b from-[#fff4dc] to-[#f9e0ac] rounded-lg shadow-lg">
-      {/* Type Selector */}
       <div className="mb-4">
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Type:
@@ -160,7 +170,6 @@ const Summarizer = ({
         </select>
       </div>
 
-      {/* Format Selector */}
       <div className="mb-4">
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Format:
@@ -182,7 +191,6 @@ const Summarizer = ({
         </select>
       </div>
 
-      {/* Length Selector */}
       <div className="mb-4">
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Length:
@@ -205,7 +213,6 @@ const Summarizer = ({
         </select>
       </div>
 
-      {/* Shared Context Input */}
       <div className="mb-6">
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Shared Context:
@@ -221,25 +228,22 @@ const Summarizer = ({
         />
       </div>
 
-      {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row gap-4">
         <button
           onClick={handleSummarize}
-          className="px-6 py-2 rounded-lg font-medium bg-blue-500 text-white hover:bg-blue-600 transition-all"
+          className={`px-6 py-2 rounded-lg font-medium transition-all ${
+            isGenerating
+              ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+              : 'bg-blue-500 text-white hover:bg-blue-600'
+          }`}
         >
           Summarize
-        </button>
-        <button
-          onClick={summarizeSelection}
-          className="px-6 py-2 rounded-lg font-medium bg-green-500 text-white hover:bg-green-600 transition-all"
-        >
-          Summarize Highlighted Text
         </button>
         <button
           onClick={summarizePage}
           className="px-6 py-2 rounded-lg font-medium bg-yellow-500 text-white hover:bg-yellow-600 transition-all"
         >
-          Summarize Entire Page
+          Get Entire Page Text
         </button>
       </div>
     </div>

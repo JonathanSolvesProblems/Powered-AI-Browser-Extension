@@ -2,8 +2,7 @@ import React, { useEffect, useState } from 'react';
 import './styles/styles.css';
 import Header from './components/Header';
 import { Session } from './utility/schemas';
-
-// TODO: Wrap output
+// https://heroicons.com/outline
 const App = () => {
   const [inputText, setInputText] = useState('');
   const [output, setOutput] = useState('');
@@ -64,7 +63,7 @@ const App = () => {
       <textarea
         value={inputText}
         onChange={(e) => saveInputToBackground(e.target.value)}
-        placeholder="Enter your research content or URL"
+        placeholder="Start writing here..."
         className="mt-6 w-full max-w-3xl h-32 p-4 border border-gray-300 rounded-lg shadow focus:ring-2 focus:ring-yellow-400 focus:outline-none resize-none text-gray-700"
       />
 
