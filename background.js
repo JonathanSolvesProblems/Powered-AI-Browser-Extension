@@ -5,7 +5,7 @@ let cachedSummaryParms = {};
 let cachedPromptParams = {};
 let promptController;
 let sessions = {};
-let currentSession = null;
+let currentSession;
 
 const browserSupportsAPI = (util, apiName, namespace) => {
   if (util in self && apiName in namespace) {
@@ -18,14 +18,6 @@ const browserSupportsAPI = (util, apiName, namespace) => {
   }
 };
 
-// https://developer.chrome.com/docs/ai/translator-api
-// TODO Only include languages in drop-down that are supported: https://developer.chrome.com/docs/ai/translator-api#language-support
-// Can create some sort of dictionary
-// that's it.  It's not available there (I've been running it in a side panel). Try running it in an offscreen document.
-// https://developer.chrome.com/docs/extensions/reference/api/offscreen
-
-// https://developer.chrome.com/docs/ai/summarizer-api?_gl=1*l04xrn*_up*MQ..*_ga*MTgyNzc5NTg2MS4xNzMyMzgxMDY5*_ga_H1Y3PXZW9Q*MTczMjM4MTA2OC4xLjAuMTczMjM4MTA2OC4wLjAuMA..#use-summarizer
-// TODO: Expand more with UI, options like it generating as it's thinking, etc.
 const getSummary = async (
   text,
   type,
@@ -73,7 +65,6 @@ const getSummary = async (
 
     cachedOutputText = summary;
   } else {
-    // The Summarizer API can be used after the model is downloaded.
     summarizer = await self.ai.summarizer.create(options);
     summarizer.addEventListener('downloadprogress', (e) => {
       console.log(e.loaded, e.total);
@@ -138,6 +129,9 @@ const getPromptResponse = async (text, temperature, topK, sessionId) => {
     (${session.tokensLeft} left)`);
 
     cachedOutputText = promptResponse;
+
+    console.log(`sessions: ${JSON.stringify(sessions)}`);
+    console.log(`currentSession: ${JSON.stringify(currentSession)}`);
 
     return {
       success: true,
@@ -292,8 +286,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (session) {
       const controller = new AbortController();
       cloneSession(session, controller.signal).then((clonedSession) => {
+        const context = sessions[sessionId]?.context;
+
+        if (!context) {
+          console.log('context was not defined in cloning');
+        }
+
         const clonedSessionId = `session-${Date.now()}`;
-        sessions[clonedSessionId] = { session: clonedSession, controller };
+        sessions[clonedSessionId] = {
+          session: clonedSession,
+          controller: controller,
+          context: context,
+        };
         sendResponse({ success: true, sessionId: clonedSessionId });
       });
     } else {

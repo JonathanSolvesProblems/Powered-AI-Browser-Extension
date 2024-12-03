@@ -1,33 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { getSummary } from '../utility/apiCalls';
 import { getActiveTabId } from '../utility/helper';
-interface SummarizerProps {
-  inputText: string;
-  setInputText: (inputText: string) => void;
-  output: string;
-  setOutput: (summary: string) => void;
-}
 
-// TODO: Provide user feedback when doing API call
-// Extend other features: https://developer.chrome.com/docs/ai/summarizer-api?_gl=1*l04xrn*_up*MQ..*_ga*MTgyNzc5NTg2MS4xNzMyMzgxMDY5*_ga_H1Y3PXZW9Q*MTczMjM4MTA2OC4xLjAuMTczMjM4MTA2OC4wLjAuMA..#use-summarizer
-// Give UI options to users to select other options
-// Potentially tokens go in manifest?
-// TODO: Test in a zoom meeting or something
-// TODO: Add session management
-// Can maybe reference other resources related?
-// summarizing videos?
-// TODO Unify buttons
-const Summarizer = ({
-  inputText,
-  setInputText,
-  output,
-  setOutput,
-}: SummarizerProps) => {
+const Summarizer = () => {
   const [type, setType] = useState('key-points');
   const [format, setFormat] = useState('markdown');
   const [length, setLength] = useState('medium');
   const [sharedContext, setSharedContext] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [output, setOutput] = useState('');
+  const [inputText, setInputText] = useState('');
 
   const setSummaryParms = (
     type: string,
@@ -71,6 +53,23 @@ const Summarizer = ({
       }
     );
   };
+
+  useEffect(() => {
+    chrome.storage.local.get('output', (data) => {
+      if (data.output) setOutput(data.output);
+    });
+    chrome.storage.local.get('inputText', (data) => {
+      if (data.inputText) setInputText(data.inputText);
+    });
+  }, []);
+
+  useEffect(() => {
+    chrome.storage.local.set({ output: output });
+  }, [output]);
+
+  useEffect(() => {
+    chrome.storage.local.set({ inputText: inputText });
+  }, [inputText]);
 
   const handleSummarize = async () => {
     const selectedText = await getSelection();
@@ -245,6 +244,18 @@ const Summarizer = ({
         >
           Get Entire Page Text
         </button>
+      </div>
+      <textarea
+        value={inputText}
+        onChange={(e) => setInputText(e.target.value)}
+        placeholder="Start writing here..."
+        className="mt-6 w-full max-w-3xl h-32 p-4 border border-gray-300 rounded-lg shadow focus:ring-2 focus:ring-yellow-400 focus:outline-none resize-none text-gray-700"
+      />
+      <div
+        id="output"
+        className="mt-6 w-full max-w-3xl p-4 bg-white border border-gray-200 rounded-lg shadow text-gray-800 whitespace-pre-line"
+      >
+        {output || 'Your output will appear here.'}
       </div>
     </div>
   );

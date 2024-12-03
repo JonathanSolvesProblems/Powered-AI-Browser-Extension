@@ -18,16 +18,16 @@
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
-      "16": "build/luffy.png",
-      "48": "build/luffy.png",
-      "128": "build/luffy.png"
+      "16": "build/IQ_Logo.png",
+      "48": "build/IQ_Logo.png",
+      "128": "build/IQ_Logo.png"
     }
   },
   "host_permissions": ["https://*/*"],
   "icons": {
-    "16": "build/luffy.png",
-    "48": "build/luffy.png",
-    "128": "build/luffy.png"
+    "16": "build/IQ_Logo.png",
+    "48": "build/IQ_Logo.png",
+    "128": "build/IQ_Logo.png"
   },
   "web_accessible_resources": [
     {

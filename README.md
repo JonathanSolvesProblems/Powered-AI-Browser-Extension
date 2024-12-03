@@ -1,95 +1,42 @@
-###
-# Powered-AI-Browser-Extension
+# InstaQ
 
-in package.json, ensure:
-"scripts": {
-  "start": "react-scripts start",
-  "build": "react-scripts build",
-  "extension": "npm run build && crx-hotreload"
-}
+### Demo: [InstaQ - Google Chrome Built-in AI Challenge](https://www.youtube.com/watch?v=S1PiyPxxCXY)
 
-npm run build
+# Instructions to Run
 
-Chrome Extension:
-- Summarize Page - Summarization API
-- Use it to cite a section of the page, can highlight what to paraphrase
-	and will automatically cite it in appropriate format based on standard.
-	- If nothing highlighted, then assume whole page.
-- Take Info from Page with User's Prompt to Re-Write Tone: Write API
-- Query Page to See if Anything Relevant to Search
-- Rewrite API as well on google docs
-- Translation API to view web page and translate a summary for the user.
+To get started, follow the following steps to import this project as a chrome extension locally:
+
+1. **Prerequisites**
+
+   - Install Google Canary, as this is the supported web client for the browser extension: [Google Canary](https://www.google.com/chrome/canary/)
+   - Open Google Canary and ensure the following are enabled by copying the URLs into your Google Canary client below:
+   - Enable the Summarization API for Gemini Nano:   ```chrome://flags/#summarization-api-for-gemini-nano```
+   - Enable the Translator API: ```chrome://flags/#translation-api```
+   - Enable the Prompt API in Extensions by selecting Enabled BypassPerfRequirement: ```chrome://flags/#optimization-guide-on-device-model```
 
 
-###
+2. **Clone the Repository**
+   
+   First, clone the repository to your local machine using the following command:
 
-# Getting Started with Create React App
+   ```bash
+   git clone https://github.com/JonathanSolvesProblems/Powered-AI-Browser-Extension.git
+   ```
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+   Alternatively, you can simply download this project and unzip it by clicking on the green "Code" button in the top right of the page and then the "Download ZIP" button.
 
-## Available Scripts
+3. **Go to the chrome extensions page on your web browser**
 
-In the project directory, you can run:
+   Open your internet browser with Google Canary and go to the following URL:
 
-### `npm start`
+   ```bash
+   chrome://extensions/
+   ```
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+4. **Load the extension into the browser**
+ 
+   Click on the "Load unpacked" button on your browser and select the root folder that you downloaded on your local machine.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+5. **Play with the browser extension**
 
-### `npm test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+   From there, the browser extension should now be loaded and will work as a regular extension. It is persistent, so it will always be where you left off. Enjoy!

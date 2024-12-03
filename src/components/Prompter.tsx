@@ -2,20 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Session } from '../utility/schemas';
 import { moreIcon } from '../utility/icons';
 
-// TODO: May be response bug to correct, I see doubles, but finish other parts first as may change.
-interface PrompterProps {
-  inputText: string;
-  setOutput: (summary: string) => void;
-  currentSession: Session | null;
-  setCurrentSession: (currentSession: Session | null) => void;
-}
-
-const Prompter = ({
-  inputText,
-  setOutput,
-  currentSession,
-  setCurrentSession,
-}: PrompterProps) => {
+const Prompter = () => {
   const [temperature, setTemperature] = useState(1.0);
   const [topK, setTopK] = useState(3);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -27,6 +14,13 @@ const Prompter = ({
   const [openSessionMenuId, setOpenSessionMenuId] = useState<string | null>(
     null
   );
+  const [output, setOutput] = useState('');
+  const [collapsedResponses, setCollapsedResponses] = useState<Set<number>>(
+    new Set()
+  );
+  const [currentSession, setCurrentSession] = useState<Session | null>(null);
+  const [inputText, setInputText] = useState('');
+  const [allowNewSession, setAllowNewSession] = useState(false);
 
   const setPromptParms = (temperature: number, topK: number) => {
     setTemperature(temperature);
@@ -58,6 +52,23 @@ const Prompter = ({
     storeCurrentSessionInBackground();
   }, [currentSession]);
 
+  useEffect(() => {
+    chrome.storage.local.get('output', (data) => {
+      if (data.output) setOutput(data.output);
+    });
+    chrome.storage.local.get('inputText', (data) => {
+      if (data.inputText) setInputText(data.inputText);
+    });
+  }, []);
+
+  useEffect(() => {
+    chrome.storage.local.set({ output: output });
+  }, [output]);
+
+  useEffect(() => {
+    chrome.storage.local.set({ inputText: inputText });
+  }, [inputText]);
+
   const storeSessionsInBackground = () => {
     chrome.runtime.sendMessage(
       { action: 'storeSessions', payload: sessions },
@@ -68,6 +79,13 @@ const Prompter = ({
       }
     );
   };
+
+  useEffect(() => {
+    if (allowNewSession && !currentSession) {
+      handlePrompter();
+      setAllowNewSession(false);
+    }
+  }, [allowNewSession]);
 
   const storeCurrentSessionInBackground = () => {
     chrome.runtime.sendMessage(
@@ -115,6 +133,11 @@ const Prompter = ({
         }
       }
     );
+  };
+
+  const createNewSession = async () => {
+    setCurrentSession(null);
+    setAllowNewSession(true);
   };
 
   const handleCloneSession = async () => {
@@ -175,6 +198,18 @@ const Prompter = ({
       }
     );
   }, [cancelTriggered]);
+
+  const toggleCollapse = (index: number) => {
+    setCollapsedResponses((prev) => {
+      const newCollapsed = new Set(prev);
+      if (newCollapsed.has(index)) {
+        newCollapsed.delete(index);
+      } else {
+        newCollapsed.add(index);
+      }
+      return newCollapsed;
+    });
+  };
 
   const handleCancel = () => {
     getCurrentSessionInBackground();
@@ -279,10 +314,11 @@ const Prompter = ({
                         response.promptResponse.length > 10
                           ? `${response.promptResponse.slice(0, 10)}...`
                           : response.promptResponse,
-                      responses: [
-                        ...session.responses,
-                        response.promptResponse,
-                      ],
+                      responses: session.responses.includes(
+                        response.promptResponse
+                      )
+                        ? session.responses
+                        : [...session.responses, response.promptResponse],
                     }
                   : session
               )
@@ -412,6 +448,16 @@ const Prompter = ({
                     >
                       Rename
                     </button>
+                    {/* <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenSessionMenuId(null);
+                        createNewSession();
+                      }}
+                      className="block px-4 py-2 text-sm hover:bg-gray-100 w-full text-left"
+                    >
+                      New
+                    </button> */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -419,14 +465,9 @@ const Prompter = ({
                         handleCloneSession();
                       }}
                       disabled={!currentSession}
-                      className={`px-6 py-2 rounded-lg font-medium transition-all 
-            ${
-              !currentSession
-                ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
-                : 'bg-green-500 text-white hover:bg-green-600'
-            }`}
+                      className="block px-4 py-2 text-sm hover:bg-gray-100 w-full text-left text-green-600"
                     >
-                      Clone Session
+                      Copy
                     </button>
                     <button
                       onClick={(e) => {
@@ -445,6 +486,50 @@ const Prompter = ({
           ))}
         </div>
       </div>
+      <textarea
+        value={inputText}
+        onChange={(e) => setInputText(e.target.value)}
+        placeholder="Start writing here..."
+        className="mt-6 w-full max-w-3xl h-32 p-4 border border-gray-300 rounded-lg shadow focus:ring-2 focus:ring-yellow-400 focus:outline-none resize-none text-gray-700"
+      />
+      <div
+        id="output"
+        className="mt-6 w-full max-w-3xl p-4 bg-white border border-gray-200 rounded-lg shadow text-gray-800 whitespace-pre-line"
+      >
+        {output || 'Your output will appear here.'}
+      </div>
+      {currentSession && (
+        <div
+          id="responses"
+          className="mt-6 w-full max-w-3xl p-4 bg-white border border-gray-200 rounded-lg shadow text-gray-800 whitespace-pre-line"
+        >
+          {currentSession.responses.length > 0 ? (
+            <ul className="list-disc pl-6 space-y-4">
+              {' '}
+              {currentSession.responses.map((response, index) => {
+                const isCollapsed = collapsedResponses.has(index);
+                const displayText =
+                  isCollapsed && response.length > 10
+                    ? `${response.slice(0, 10)}...`
+                    : response;
+
+                return (
+                  <li key={index} className="text-gray-700">
+                    <div
+                      onClick={() => toggleCollapse(index)}
+                      className="cursor-pointer hover:text-blue-600 transition-all"
+                    >
+                      {displayText}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p>Your responses will appear here.</p>
+          )}
+        </div>
+      )}
     </div>
   );
 };

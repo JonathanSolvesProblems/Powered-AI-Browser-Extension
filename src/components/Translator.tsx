@@ -2,27 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { getTranslationText } from '../utility/apiCalls';
 import { getActiveTabId } from '../utility/helper';
 
-// TODO: Option to swap source and target
-interface TranslatorProps {
-  inputText: string;
-  setInputText: (inputText: string) => void;
-  output: string;
-  setOutput: (summary: string) => void;
-}
-
-// TODO: Provide user feedback when doing API call
-// Extend other features: https://developer.chrome.com/docs/ai/summarizer-api?_gl=1*l04xrn*_up*MQ..*_ga*MTgyNzc5NTg2MS4xNzMyMzgxMDY5*_ga_H1Y3PXZW9Q*MTczMjM4MTA2OC4xLjAuMTczMjM4MTA2OC4wLjAuMA..#use-summarizer
-
-// Save phrases
-const Translator = ({
-  inputText,
-  setInputText,
-  output,
-  setOutput,
-}: TranslatorProps) => {
+const Translator = () => {
   const [sourceLang, setSourceLang] = useState('en');
   const [targetLang, setTargetLang] = useState('es');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [output, setOutput] = useState('');
+  const [inputText, setInputText] = useState('');
 
   const languageOptions = [
     { label: 'English', value: 'en' },
@@ -73,6 +58,23 @@ const Translator = ({
   useEffect(() => {
     chrome.storage.local.set({ targetLang: targetLang });
   }, [targetLang]);
+
+  useEffect(() => {
+    chrome.storage.local.get('output', (data) => {
+      if (data.output) setOutput(data.output);
+    });
+    chrome.storage.local.get('inputText', (data) => {
+      if (data.inputText) setInputText(data.inputText);
+    });
+  }, []);
+
+  useEffect(() => {
+    chrome.storage.local.set({ output: output });
+  }, [output]);
+
+  useEffect(() => {
+    chrome.storage.local.set({ inputText: inputText });
+  }, [inputText]);
 
   const getSelection = async () => {
     try {
@@ -144,20 +146,20 @@ const Translator = ({
       <div className="flex justify-center items-center mb-6">
         <button
           onClick={swapLanguages}
-          className="bg-gray-200 hover:bg-gray-300 text-gray-700 p-2 rounded-full shadow transition-all"
+          className="bg-white hover:bg-gray-100 text-gray-700 rounded-full shadow transition-all inline-flex items-center justify-center h-8 w-8 p-0"
           aria-label="Swap Languages"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
-            stroke-width="1.5"
+            strokeWidth="1.5"
             stroke="currentColor"
-            className="size-6"
+            className="h-6 w-6"
           >
             <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
+              strokeLinecap="round"
+              strokeLinejoin="round"
               d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
             />
           </svg>
@@ -197,6 +199,18 @@ const Translator = ({
         >
           {isGenerating ? 'Translating' : 'Translate'}
         </button>
+      </div>
+      <textarea
+        value={inputText}
+        onChange={(e) => setInputText(e.target.value)}
+        placeholder="Start writing here..."
+        className="mt-6 w-full max-w-3xl h-32 p-4 border border-gray-300 rounded-lg shadow focus:ring-2 focus:ring-yellow-400 focus:outline-none resize-none text-gray-700"
+      />
+      <div
+        id="output"
+        className="mt-6 w-full max-w-3xl p-4 bg-white border border-gray-200 rounded-lg shadow text-gray-800 whitespace-pre-line"
+      >
+        {output || 'Your output will appear here.'}
       </div>
     </div>
   );
